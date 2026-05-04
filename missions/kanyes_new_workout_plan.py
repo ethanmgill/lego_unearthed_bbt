@@ -165,12 +165,18 @@ def forge():
     drive_straight(-90)
     # turn to set up for forge
     turn_to_heading(90)
-    # drive forward to line up with forge position
-    drive_straight(130)
-    # turn to face forge
-    pivot_about_left_wheel(45)
-    # drive backwards through forge, using appendage to push over lever
-    drive_straight(-180)
+
+    while left_light_sensor.color() != Color.WHITE:
+        print('moving towards forge pos...')
+        drive_straight(1)
+
+    # OLD IMPLEMENTATION
+    # # drive forward to line up with forge position
+    # drive_straight(130)
+    # # turn to face forge
+    # pivot_about_left_wheel(45)
+    # # drive backwards through forge, using appendage to push over lever
+    # drive_straight(-180)
 
 
 def who_lived_here():
