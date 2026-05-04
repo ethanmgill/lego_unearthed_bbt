@@ -87,6 +87,7 @@ def pivot_about_right_wheel(heading, speed=200):
 def pivot_about_left_wheel(heading, speed=200):
     """Pivot with left wheel fixed to an absolute IMU heading (degrees CW from start)."""
     delta = heading - hub.imu.heading()
+    print(f"delta: {delta}")
     while delta > 180:
         delta -= 360
     while delta < -180:
