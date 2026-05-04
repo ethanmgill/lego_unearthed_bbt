@@ -166,7 +166,8 @@ def forge():
     # turn to set up for forge
     turn_to_heading(90)
 
-    while left_light_sensor.color() != Color.WHITE:
+    print('heading to forge pos..')
+    while right_light_sensor.color() != Color.BLACK:
         left_motor.run_time(300, 100, wait=False)
         right_motor.run_time(300, 100, wait=False)
         wait(100)
