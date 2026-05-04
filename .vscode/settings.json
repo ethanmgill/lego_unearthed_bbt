@@ -1,3 +1,3 @@
 {
-  "python.defaultInterpreterPath": "C:\\Users\\emgil\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+  "python.defaultInterpreterPath": "${workspaceFolder}\\missions\\.venv\\Scripts\\python.exe"
 }
