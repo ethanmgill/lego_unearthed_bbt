@@ -37,7 +37,7 @@ def get_position():
     return robot.state()
 
 # ── Gyro-corrected movement ───────────────────────────────────────────────────
-def drive_straight(distance_mm, speed=STRAIGHT_SPEED):
+def drive_straight(distance_mm, speed=STRAIGHT_SPEED, then=Stop.BRAKE):
     robot.reset()
     target_heading = hub.imu.heading()
     direction = 1 if distance_mm >= 0 else -1
@@ -47,7 +47,12 @@ def drive_straight(distance_mm, speed=STRAIGHT_SPEED):
         heading_error = hub.imu.heading() - target_heading
         robot.drive(direction * speed, -heading_error * GYRO_KP)
 
-    robot.brake()
+    if then == Stop.BRAKE:
+        robot.stop()
+    elif then == Stop.HOLD:
+        robot.hold()
+    else: # COAST
+        pass
 
 def turn_to_heading(target_deg, tolerance=3):
     delta = target_deg - hub.imu.heading()
@@ -71,22 +76,24 @@ def turn_by(degrees, tolerance=3):
 # Motor rotation for a pivot = AXLE_TRACK * angle_deg * 2 / WHEEL_DIAMETER
 # (derived from arc_length = AXLE_TRACK * angle_rad, then arc / circumference * 360)
 
-def pivot_about_right_wheel(degrees, speed=200):
+async def pivot_about_right_wheel(degrees, speed=200):
     """Pivot with right wheel fixed; positive = CW (heading increases)."""
-    robot.brake()  # keep motors braked so hold() engages from a stable state
     motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
     direction = 1 if degrees > 0 else -1
+    robot.stop()  # release DriveBase before direct motor control
     right_motor.hold()
-    left_motor.run_angle(speed, direction * motor_deg)
+    wait(50)  # let hold engage before the other motor starts
+    await left_motor.run_angle(speed, direction * motor_deg)
     robot.reset()  # resync DriveBase after direct motor control
 
-def pivot_about_left_wheel(degrees, speed=200):
+async def pivot_about_left_wheel(degrees, speed=200):
     """Pivot with left wheel fixed; positive = CW (heading increases)."""
-    robot.brake()  # keep motors braked so hold() engages from a stable state
     motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
-    direction = -1 if degrees > 0 else 1  # right wheel back for CW, forward for CCW
+    direction = 1 if degrees > 0 else -1  # right wheel forward for CW, backward for CCW
+    robot.stop()  # release DriveBase before direct motor control
     left_motor.hold()
-    right_motor.run_angle(speed, direction * motor_deg)
+    wait(50)  # let hold engage before the other motor starts
+    await right_motor.run_angle(speed, direction * motor_deg)
     robot.reset()
 
 async def startup():
@@ -102,18 +109,18 @@ async def silo():
     # lift arm until stall
     await front_motor.run_until_stalled(300, then=Stop.HOLD) 
     # drive forward away from wall
-    drive_straight(200)
+    drive_straight(205, speed=200)
     # drive out to line up with silo
     turn_by(-90, tolerance=5)
-    drive_straight(70)
+    drive_straight(70, speed=200)
     # approach silo
     #drive_straight(55)
     wait(200)
     # smack silo 3 times
-    for i in range(1):
-        turn_to_heading(0, tolerance=2)
+    for i in range(5):
+        turn_to_heading(2, tolerance=2.5)
         print(f"pushing down: #{i+1}")
-        await front_motor.run_until_stalled(-500, then=Stop.HOLD) # push down on silo until stall
+        await front_motor.run_until_stalled(-400, then=Stop.HOLD, duty_limit=100) # push down on silo until stall
         wait(200)
         print(f"pulling up: #{i+1}")
         await front_motor.run_target(300, 60, then=Stop.COAST)
@@ -137,8 +144,8 @@ async def heavy_lifting():
     # await front_motor.run_target(50, 0, then=Stop.BRAKE)
     # front_motor.run_target(50, 0, then=Stop.HOLD)
     # lower arm (Raf)
-    await front_motor.run_target(50, 10, then=Stop.BRAKE)
-    front_motor.run_target(50, 10, then=Stop.HOLD)
+    await front_motor.run_target(50, 8, then=Stop.BRAKE)
+    front_motor.run_target(50, 8, then=Stop.HOLD)
     wait(200)
 
     # move forward to reach under object
@@ -151,54 +158,33 @@ async def heavy_lifting():
     wait(200)
 
 
-def forge():
+async def forge():
     # back away from heavy object
-    drive_straight(-90)
-    # turn to set up for forge
-    turn_to_heading(90)
-    # drive forward to line up with forge position
-    drive_straight(130)
-    # turn to face forge
-    pivot_about_left_wheel(45)
-    # drive backwards through forge, using appendage to push over lever
-    drive_straight(-180)
-
-
-def who_lived_here():
-    # turn about left wheel to line up with who lived here
-    pivot_about_left_wheel(45)
-    # drive backward to push house over
-    drive_straight(-150)
-    # drive forward, away from house
-    drive_straight(50)
-
-
-def whats_on_sale(return_via_market=False):
-    turn_by(20)            # TUNE: degrees to release house
-    drive_straight(-80)
-    turn_by(45)
-    drive_straight(300)    # TUNE: forward distance to realign with line
     drive_straight(-50)
-    turn_by(45)
-    drive_straight(-250)   # TUNE: reverse to position in front of roof
-    turn_by(-125)
-    rear_motor.run_angle(400, 120)   # push roof up
-    wait(300)
-    rear_motor.run_angle(300, -120)  # retract whacker
-    drive_straight(-60)
-    turn_by(-45)
-    drive_straight(-400)   # TUNE: drive backward toward line
+    # turn to face silo
+    turn_to_heading(125, tolerance=2.5)
+    # drive to silo to line up with forge
+    drive_straight(70)
+    # turn to face butt to forge
+    turn_to_heading(135, tolerance=2.5)
+    # drive backcward through forge
+    drive_straight(-120)
 
-    if return_via_market:
-        turn_by(180)
-        drive_straight(200)    # TUNE: forward to realign with line
-        drive_straight(-150)   # TUNE: back into market
-        drive_straight(-50)
-        turn_by(-90)
-        drive_straight(600)    # TUNE: drive home
-    else:
-        turn_by(90)
-        drive_straight(-500)   # TUNE: reverse to base
+
+async def who_lived_here():
+    # complete rotation
+    turn_by(-15)
+    # drive backward to flip house
+    drive_straight(-40, speed=200)
+
+async def go_home():
+    turn_by(15)
+    drive_straight(50, speed=300, then=Stop.COAST)
+    turn_to_heading(190, tolerance=5)
+    drive_straight(450, speed=300, then=Stop.COAST)
+    turn_to_heading(135, tolerance=5)
+    drive_straight(200, speed=300, then=Stop.COAST)
+
 
 
 # ── Main run ──────────────────────────────────────────────────────────────────
@@ -208,7 +194,9 @@ async def main():
 
     await silo()
     await heavy_lifting()
-    forge()
+    await forge()
+    await who_lived_here()
+    await go_home()
 
     robot.stop()
 
