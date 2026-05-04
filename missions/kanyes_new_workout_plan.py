@@ -175,7 +175,7 @@ async def who_lived_here():
     # complete rotation
     turn_by(-15)
     # drive backward to flip house
-    drive_straight(-40, speed=200)
+    drive_straight(-55, speed=200) # TODO: test from 40 to 55
 
 async def go_home():
     turn_by(15)
