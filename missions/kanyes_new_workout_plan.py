@@ -71,30 +71,20 @@ def turn_by(degrees, tolerance=3):
 # Motor rotation for a pivot = AXLE_TRACK * angle_deg * 2 / WHEEL_DIAMETER
 # (derived from arc_length = AXLE_TRACK * angle_rad, then arc / circumference * 360)
 
-def pivot_about_right_wheel(heading, speed=200):
-    """Pivot with right wheel fixed to an absolute IMU heading (degrees CW from start)."""
+def pivot_about_right_wheel(degrees, speed=200):
+    """Pivot with right wheel fixed; positive = CW (heading increases)."""
     robot.stop()  # release DriveBase control before direct motor use
-    delta = heading - hub.imu.heading()
-    while delta > 180:
-        delta -= 360
-    while delta < -180:
-        delta += 360
-    motor_deg = round(AXLE_TRACK_MM * abs(delta) * 2 / WHEEL_DIAMETER_MM)
-    direction = 1 if delta > 0 else -1
+    motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
+    direction = 1 if degrees > 0 else -1
     right_motor.hold()
     left_motor.run_angle(speed, direction * motor_deg)
     robot.reset()  # resync DriveBase after direct motor control
 
-def pivot_about_left_wheel(heading, speed=200):
-    """Pivot with left wheel fixed to an absolute IMU heading (degrees CW from start)."""
+def pivot_about_left_wheel(degrees, speed=200):
+    """Pivot with left wheel fixed; positive = CW (heading increases)."""
     robot.stop()  # release DriveBase control before direct motor use
-    delta = heading - hub.imu.heading()
-    while delta > 180:
-        delta -= 360
-    while delta < -180:
-        delta += 360
-    motor_deg = round(AXLE_TRACK_MM * abs(delta) * 2 / WHEEL_DIAMETER_MM)
-    direction = 1 if delta < 0 else -1
+    motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
+    direction = -1 if degrees > 0 else 1  # right wheel goes back for CW, forward for CCW
     left_motor.hold()
     right_motor.run_angle(speed, direction * motor_deg)
     robot.reset()
