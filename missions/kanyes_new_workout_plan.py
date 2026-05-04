@@ -167,8 +167,11 @@ def forge():
     turn_to_heading(90)
 
     while left_light_sensor.color() != Color.WHITE:
-        print('moving towards forge pos...')
-        drive_straight(10)
+        left_motor.run_time(300, 100, wait=False)
+        right_motor.run_time(300, 100, wait=False)
+        wait(100)
+        
+    print('reached forge pos..')
     pivot_about_left_wheel(180)
 
     # OLD IMPLEMENTATION
