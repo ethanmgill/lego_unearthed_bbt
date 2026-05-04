@@ -168,7 +168,8 @@ def forge():
 
     while left_light_sensor.color() != Color.WHITE:
         print('moving towards forge pos...')
-        drive_straight(1)
+        drive_straight(10)
+    pivot_about_left_wheel(180)
 
     # OLD IMPLEMENTATION
     # # drive forward to line up with forge position
