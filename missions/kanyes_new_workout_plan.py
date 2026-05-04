@@ -73,7 +73,7 @@ def turn_by(degrees, tolerance=3):
 
 def pivot_about_right_wheel(degrees, speed=200):
     """Pivot with right wheel fixed; positive = CW (heading increases)."""
-    robot.stop()  # release DriveBase control before direct motor use
+    robot.brake()  # keep motors braked so hold() engages from a stable state
     motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
     direction = 1 if degrees > 0 else -1
     right_motor.hold()
@@ -82,9 +82,9 @@ def pivot_about_right_wheel(degrees, speed=200):
 
 def pivot_about_left_wheel(degrees, speed=200):
     """Pivot with left wheel fixed; positive = CW (heading increases)."""
-    robot.stop()  # release DriveBase control before direct motor use
+    robot.brake()  # keep motors braked so hold() engages from a stable state
     motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
-    direction = -1 if degrees > 0 else 1  # right wheel goes back for CW, forward for CCW
+    direction = -1 if degrees > 0 else 1  # right wheel back for CW, forward for CCW
     left_motor.hold()
     right_motor.run_angle(speed, direction * motor_deg)
     robot.reset()
