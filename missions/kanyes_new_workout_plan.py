@@ -71,20 +71,30 @@ def turn_by(degrees, tolerance=3):
 # Motor rotation for a pivot = AXLE_TRACK * angle_deg * 2 / WHEEL_DIAMETER
 # (derived from arc_length = AXLE_TRACK * angle_rad, then arc / circumference * 360)
 
-def pivot_about_right_wheel(degrees):
-    """Pivot with right wheel fixed; positive degrees = nose swings right."""
-    motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
-    direction = 1 if degrees > 0 else -1
+def pivot_about_right_wheel(heading, speed=200):
+    """Pivot with right wheel fixed to an absolute IMU heading (degrees CW from start)."""
+    delta = heading - hub.imu.heading()
+    while delta > 180:
+        delta -= 360
+    while delta < -180:
+        delta += 360
+    motor_deg = round(AXLE_TRACK_MM * abs(delta) * 2 / WHEEL_DIAMETER_MM)
+    direction = 1 if delta > 0 else -1
     right_motor.hold()
-    left_motor.run_angle(300, direction * motor_deg)
+    left_motor.run_angle(speed, direction * motor_deg)
     robot.reset()  # resync DriveBase after direct motor control
 
-def pivot_about_left_wheel(degrees):
-    """Pivot with left wheel fixed; positive degrees = nose swings left."""
-    motor_deg = round(AXLE_TRACK_MM * abs(degrees) * 2 / WHEEL_DIAMETER_MM)
-    direction = 1 if degrees > 0 else -1
+def pivot_about_left_wheel(heading, speed=200):
+    """Pivot with left wheel fixed to an absolute IMU heading (degrees CW from start)."""
+    delta = heading - hub.imu.heading()
+    while delta > 180:
+        delta -= 360
+    while delta < -180:
+        delta += 360
+    motor_deg = round(AXLE_TRACK_MM * abs(delta) * 2 / WHEEL_DIAMETER_MM)
+    direction = 1 if delta < 0 else -1
     left_motor.hold()
-    right_motor.run_angle(300, direction * motor_deg)
+    right_motor.run_angle(speed, direction * motor_deg)
     robot.reset()
 
 async def startup():
@@ -104,7 +114,7 @@ async def silo():
     # drive out to line up with silo
     turn_by(-90, tolerance=5)
     drive_straight(70)
-    turn_to_heading(2, tolerance=5)
+    turn_to_heading(0, tolerance=5)
     # approach silo
     #drive_straight(55)
     wait(200)
@@ -152,13 +162,13 @@ async def heavy_lifting():
 
 def forge():
     # back away from heavy object
-    drive_straight(-70)
+    drive_straight(-90)
     # turn to set up for forge
     turn_to_heading(90)
     # drive forward to line up with forge position
-    drive_straight(150)
+    drive_straight(130)
     # turn to face forge
-    turn_to_heading(135)
+    pivot_about_left_wheel(45)
     # drive backwards through forge, using appendage to push over lever
     drive_straight(-180)
 
@@ -208,6 +218,9 @@ async def main():
     await silo()
     await heavy_lifting()
     await forge()
+
+    robot.stop()
+
 
     # TEST CODE:
     # for i in range(10):
