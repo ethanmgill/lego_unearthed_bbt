@@ -73,6 +73,7 @@ def turn_by(degrees, tolerance=3):
 
 def pivot_about_right_wheel(heading, speed=200):
     """Pivot with right wheel fixed to an absolute IMU heading (degrees CW from start)."""
+    robot.stop()  # release DriveBase control before direct motor use
     delta = heading - hub.imu.heading()
     while delta > 180:
         delta -= 360
@@ -86,6 +87,7 @@ def pivot_about_right_wheel(heading, speed=200):
 
 def pivot_about_left_wheel(heading, speed=200):
     """Pivot with left wheel fixed to an absolute IMU heading (degrees CW from start)."""
+    robot.stop()  # release DriveBase control before direct motor use
     delta = heading - hub.imu.heading()
     while delta > 180:
         delta -= 360
@@ -114,13 +116,12 @@ async def silo():
     # drive out to line up with silo
     turn_by(-90, tolerance=5)
     drive_straight(70)
-    turn_to_heading(0, tolerance=5)
     # approach silo
     #drive_straight(55)
     wait(200)
     # smack silo 3 times
     for i in range(1):
-        turn_to_heading(3, tolerance=2)
+        turn_to_heading(0, tolerance=2)
         print(f"pushing down: #{i+1}")
         await front_motor.run_until_stalled(-500, then=Stop.HOLD) # push down on silo until stall
         wait(200)
@@ -217,7 +218,7 @@ async def main():
 
     await silo()
     await heavy_lifting()
-    await forge()
+    forge()
 
     robot.stop()
 
